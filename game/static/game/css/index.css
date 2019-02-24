@@ -1,0 +1,160 @@
+@import url(https://fonts.googleapis.com/css?family=Gamja+Flower);
+
+body, html {
+    font-family: 'Gamja Flower';
+}
+
+.container {
+    font-family: 'Gamja Flower';
+}
+
+.login100-form-btn .cnt {
+    display: inline-block;
+    background: #007bff;
+    font-size: 10px;
+    margin-bottom: 10px;
+    margin-left: 3px;
+    border-radius: 5px;
+    padding: 2px;
+    min-width: 15px;
+    text-align: center;
+}
+
+.leave-icon {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 30px;
+    color: #fff;
+}
+
+.pink-color {
+    background-color: #ef7979;
+}
+
+.pink-color:hover {
+    background-color: #ef7979;
+}
+
+.tag-container {
+    position: relative;
+}
+
+.tag-label {
+    left: 0;
+    top: -20px;
+    position: absolute;
+    font-weight: 600;
+}
+
+.tag {
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #ffffff;
+    margin: 3px;
+    cursor: context-menu;
+    display: inline-block;
+}
+
+.tag.name {
+    background-color: #038011;
+}
+
+.tag.job {
+    background-color: #2f5773;
+}
+
+.tag.job .fas:hover {
+    color: #d82e2e
+}
+
+.tag.ready {
+    background-color: #cc8013;
+}
+
+.tag.vote {
+    background-color: #ef7f73;
+}
+
+.tag.election {
+    background-color: #ef7f73;
+}
+
+.tag.night {
+    background-color: #413a7f;
+}
+
+.tag.team {
+    background-color: #c3bf28;
+}
+
+.tag.disconnected {
+    background-color: rgba(8, 54, 0, 0.73);
+}
+
+.tag.dead {
+    background-color: #aeaeae;
+}
+
+.tag.input {
+    padding: 0;
+    color: #000;
+}
+
+.modal-job {
+    overflow-y: scroll;
+    width: 100%;
+    height: 300px;
+}
+
+.v--modal-box.v--modal {
+    border-radius: 20px;
+}
+
+.fas, .far {
+    cursor: pointer;
+}
+
+.double-btn {
+    width: 45%;
+    margin: auto;
+}
+
+.login100-form-btn.vote {
+    background-color: #ef7f73;
+}
+
+.login100-form-btn.vote:hover {
+    background-color: #783c3c;
+}
+
+.login100-form-btn.night {
+    background-color: #413a7f;
+}
+
+.login100-form-btn.night:hover {
+    background-color: #1e1e45;
+}
+
+.block-screen {
+    position: absolute;
+    top: 125px;
+    left: 0;
+    z-index: 101;
+    width: 100%;
+    height: calc(100% - 125px);
+    background: rgba(255,255,255,0.5);
+}
+
+.block-screen .msg {
+    background-color: #0d99af;
+    margin: auto;
+    display: inline-block;
+    position: absolute;
+    left: 50%;
+    transform: translateY(-50%) translateX(-50%);
+    top: 40%;
+    padding: 10px;
+    border-radius: 10px;
+    color: white;
+}

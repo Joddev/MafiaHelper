@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <title>Login V8</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!--===============================================================================================-->
+    <link rel="icon" type="image/png" href="{% static 'game/images/icons/favicon.ico' %}"/>
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="{% static 'game/vendor/bootstrap/css/bootstrap.min.css' %}">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="{% static 'game/vendor/animate/animate.css' %}">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="{% static 'game/vendor/css-hamburgers/hamburgers.min.css' %}">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="{% static 'game/vendor/animsition/css/animsition.min.css' %}">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="{% static 'game/vendor/select2/select2.min.css' %}">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="{% static 'game/vendor/daterangepicker/daterangepicker.css' %}">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="{% static 'game/css/util.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'game/css/main.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'game/css/index.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'game/css/circle.css' %}">
+    <link href="https://fonts.googleapis.com/css?family=Gamja+Flower" rel="stylesheet">
+    <!--===============================================================================================-->
+    <script defer src="{% static 'game/js/index.js' %}"></script>
+</head>
+<body>
+{% verbatim %}
+<div class="limiter container">
+    <div class="container-login100">
+        <div class="wrap-login100">
+            <div id="mafia-vue" class="login100-form validate-form p-l-25 p-r-25 p-t-150 p-b-30">
+                <div class="block-screen" v-show="block.activated">
+                    <div class="msg">{{ block.msg }}</div>
+                </div>
+                <span class="login100-form-title">
+                    Mafia
+                </span>
+                <!-- Main View -->
+                <template v-if="room === 'main'">
+                    <template>
+                        <span class="tag name" @click="toggle_name_input">
+                            {{ me.name }} <i class="fas" v-bind:class="{ 'fa-check': edit_name, 'fa-pencil-alt': !edit_name }"></i>
+                        </span>
+                        <input id="editor" ref="editor" v-model="me.name" @change="change_name" class="input-tag" v-show="edit_name">
+                    </template>
+                    <mafia-room v-for="room in room_list" v-bind:room="room" @click.native="join_room(room)" :key="room.name"></mafia-room>
+
+                    <div @click="create_room" class="container-login100-form-btn m-t-30">
+                        <div class="login100-form-btn">
+                            + create room
+                        </div>
+                    </div>
+                </template>
+                <!-- Room View -->
+                <template v-else-if="room !== 'main'">
+                    <div class="leave-icon">
+                        <i @click="leave_room" class="far fa-times-circle"></i>
+                    </div>
+                    <div class="tag-container">
+                        <span class="tag-label">members</span>
+                        <mafia-user-tag v-for="member in member_list" v-bind:member="member" :key="member.id"></mafia-user-tag>
+                    </div>
+                    <template v-if="room_status === 0">
+                        <div class="tag-container m-t-30">
+                            <span class="tag-label">jobs</span>
+                            <span v-for="elem in jobs" class="tag job">
+                                {{ elem.job }}: {{ elem.count }}
+                                <i @click="add_job(elem.job)" class="fas fa-caret-up"></i>
+                                <i @click="remove_job(elem.job)" class="fas fa-caret-down"></i>
+                            </span>
+                            <i @click="get_jobs" class="fas fa-plus-circle" style="color:#2f5773"></i>
+                        </div>
+                        <div @click="ready()" class="container-login100-form-btn m-t-30">
+                            <div class="login100-form-btn">
+                                {{ me.choice.status == 'yet'? 'ready':'cancel' }}
+                            </div>
+                            <!--<span style="position:absolute; bottom:-22px; color:#ff6868;">{{ ready_msg }}</span>-->
+                        </div>
+                    </template>
+                    <template v-else-if="room_status === 1">
+                        <div class="tag-container m-t-30">
+                            <span class="tag-label">job</span>
+                            <span class="tag job">
+                                {{ job }}
+                            </span>
+                            <i @click="get_jobs" class="far fa-question-circle" style="color:#2f5773"></i>
+                        </div>
+                        <div class="tag-container m-t-30">
+                            <span class="tag-label">teammates</span>
+                            <mafia-user-tag class="team" v-for="mate in team_mates" v-bind:member="mate" :key="mate.id"></mafia-user-tag>
+                        </div>
+                        <div class="container-login100-form-btn m-t-30">
+                            <div @click="day_choose('election')" class="login100-form-btn double-btn vote">
+                                {{ me.choice.target == 'election'? 'cancel':'election' }}
+                            </div>
+                            <div @click="day_choose('night')" class="login100-form-btn double-btn night">
+                                {{ me.choice.target == 'night'? 'cancel':'night' }}
+                            </div>
+                        </div>
+                    </template>
+                    <template v-else-if="room_status === 2">
+                        <div style="width:100%; padding-top:100%; position:relative">
+                            <div id="canvas-container" style="position:absolute; top:0; left:0; width:100%; height:100%;">
+                                <!--<canvas id="my-canvas" width="500" height="500" style="width:100%; height:100%;">Your browser does not support the HTML5 canvas tag.</canvas>-->
+                            </div>
+                        </div>
+                        <div class="container-login100-form-btn m-t-30">
+                            <div @click="elect('fix')" class="login100-form-btn double-btn vote">
+                                {{ me.choice.status == 'fixed' && me.choice.target != null ? 'cancel':'fix' }}
+                            </div>
+                            <div @click="elect('abstain')" class="login100-form-btn double-btn night">
+                                {{ me.choice.status == 'fixed' && me.choice.target == null ? 'cancel':'abstain' }}
+                            </div>
+                        </div>
+                    </template>
+                    <template v-else-if="room_status === 3">
+                        <div class="tag-container m-t-30">
+                            <span class="tag-label">job</span>
+                            <span class="tag job">
+                                {{ job }}
+                            </span>
+                            <i @click="get_jobs" class="far fa-question-circle" style="color:#2f5773"></i>
+                        </div>
+                        <div class="tag-container m-t-30">
+                            <span class="tag-label">teammates</span>
+                            <mafia-user-tag class="team" v-for="mate in team_mates" :member="mate" :target="true" :member_set="member_set" :key="mate.id"></mafia-user-tag>
+                        </div>
+                        <div class="tag-container m-t-30">
+                            <span class="tag-label">targets</span>
+                            <mafia-user-tag v-for="member in targets" @click.native="choose_target(member.id)" :member="member" :key="member.id"></mafia-user-tag>
+                            <span v-show="targets.length == 0">You can not choose target users.</span>
+                        </div>
+                        <div class="container-login100-form-btn m-t-30">
+                            <div @click="choose_target('fix', 'fixed')" class="login100-form-btn double-btn vote">
+                                {{ me.choice.status == 'fixed' && me.choice.target != null ? 'cancel':'fix' }}
+                            </div>
+                            <div @click="choose_target('abstain', 'fixed')" class="login100-form-btn double-btn night">
+                                {{ me.choice.status == 'fixed' && me.choice.target == null ? 'cancel':'abstain' }}
+                            </div>
+                        </div>
+                    </template>
+                </template>
+                <template>
+                    <modals-container />
+                </template>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+{% endverbatim %}
+</html>
