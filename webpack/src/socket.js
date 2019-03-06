@@ -1,7 +1,8 @@
 const ws = {};
 
 ws.socket = (url, handler) => {
-    const socket = new WebSocket(`ws://${url}`);
+    const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(`${ws_scheme}://${url}`);
 
     socket.send_json = (json) => socket.send(JSON.stringify(json));
 

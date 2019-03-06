@@ -4,6 +4,7 @@ import uuid
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from game.core import room_container, job_list
 from game.socket import HandlerType
+import time
 
 logger = logging.getLogger('mafia')
 MAIN_GROUP = 'main'
@@ -78,6 +79,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         })
 
     async def main_changed(self):
+        logger.info('main_changed')
         await self.channel_layer.group_send(
             MAIN_GROUP,
             {
@@ -140,10 +142,12 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         })
 
     async def common_send(self, event):
-        logger.info(event)
-        event['type'] = event['ret_type']
-        event.pop('ret_type', None)
-        await self.send_json(event)
+        # event 변경 하지 말것
+        logger.info('common_send')
+        msg = event.copy()
+        msg['type'] = event['ret_type']
+        msg.pop('ret_type', None)
+        await self.send_json(msg)
 
     async def leave_main(self):
         await self.channel_layer.group_discard(
