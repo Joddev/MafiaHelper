@@ -24,12 +24,6 @@ def index(request, template_name='game/index.html'):
         request.session.save()
     data = dict()
     key = request.session.session_key
-    try:
-        data['user'] = User.objects.get(key=key)
-    except User.DoesNotExist:
-        data['user'] = User.objects.create(key=key, name=names.get_first_name())
-
-    data['object_list'] = Room.objects.annotate(num_users=Count('users'))
     return render(request, template_name, data)
 
 
