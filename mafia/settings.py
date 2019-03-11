@@ -134,54 +134,56 @@ CHANNEL_LAYERS = {
 
 ASGI_APPLICATION = 'mafia.routing.application'
 
-LOGGING = {
-    'version': 1,
-    # 기존의 로깅 설정을 비활성화 할 것인가?
-    'disable_existing_loggers': False,
-
-    # 포맷터
-    # 로그 레코드는 최종적으로 텍스트로 표현됨
-    # 이 텍스트의 포맷 형식 정의
-    # 여러 포맷 정의 가능
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-
-    # 핸들러
-    # 로그 레코드로 무슨 작업을 할 것인지 정의
-    # 여러 핸들러 정의 가능
-    'handlers': {
-        # 콘솔(터미널)에 출력
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        # 'file': {
-        #     'level': 'DEBUG',
-        #     'class': 'logging.FileHandler',
-        #     'filename': '/path/to/django/debug.log',
-        # },
-    },
-
-    # 로거
-    # 로그 레코드 저장소
-    # 로거를 이름별로 정의
-    'loggers': {
-        'mafia': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        },
-    },
-}
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Activate Django-Heroku.
 django_heroku.settings(locals())
+
+LOGGING['loggers']['mafia'] = {
+    'handlers': ['console'],
+    'level': 'DEBUG',
+}
+
+# LOGGING = {
+#     'version': 1,
+#     # 기존의 로깅 설정을 비활성화 할 것인가?
+#     'disable_existing_loggers': False,
+
+#     # 포맷터
+#     # 로그 레코드는 최종적으로 텍스트로 표현됨
+#     # 이 텍스트의 포맷 형식 정의
+#     # 여러 포맷 정의 가능
+#     'formatters': {
+#         'verbose': {
+#             'format': '{levelname} {module} {process:d} {thread:d} {message}',
+#             'style': '{',
+#         },
+#         'simple': {
+#             'format': '{levelname} {message}',
+#             'style': '{',
+#         },
+#     },
+
+#     # 핸들러
+#     # 로그 레코드로 무슨 작업을 할 것인지 정의
+#     # 여러 핸들러 정의 가능
+#     'handlers': {
+#         # 콘솔(터미널)에 출력
+#         'console': {
+#             'level': 'DEBUG',
+#             'class': 'logging.StreamHandler',
+#             'formatter': 'verbose',
+#         },
+#         # 'file': {
+#         #     'level': 'DEBUG',
+#         #     'class': 'logging.FileHandler',
+#         #     'filename': '/path/to/django/debug.log',
+#         # },
+#     },
+
+#     # 로거
+#     # 로그 레코드 저장소
+#     # 로거를 이름별로 정의
+#     'loggers': {
+#         'mafia': 
+#     },
+# }

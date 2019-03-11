@@ -1,4 +1,5 @@
 from game.core.base import *
+from game.core.room_processor import *
 from channels.layers import get_channel_layer
 from game.socket import HandlerType
 
@@ -70,13 +71,13 @@ class RoomHandler:
     async def add_user(self, room, channel):
         # room already exists
         try:
-            logger.info('user {} is added to room {}'.format(channel.name, room))
-            self.__rooms[room].add_user(channel.channel_name, channel.name)
-            await self.alert_member_changed(room, channel.channel_name, channel.name)
+            logger.info('user {} is added to room {}'.format(channel.username, room))
+            self.__rooms[room].add_user(channel.channel_name, channel.username)
+            await self.alert_member_changed(room, channel.channel_name, channel.username)
         except KeyError:
             logger.info('new room {} is created'.format(room))
             new_room = Room(room)
-            new_room.add_user(channel.channel_name, channel.name)
+            new_room.add_user(channel.channel_name, channel.username)
             self.__rooms[room] = new_room
 
     async def remove_user(self, room, channel):
@@ -85,7 +86,7 @@ class RoomHandler:
             if len([user for user in self.__rooms[room].get_user_list() if user.connected]) < 1:
                 del self.__rooms[room]
             else:
-                await self.alert_member_changed(room, channel.channel_name, channel.name)
+                await self.alert_member_changed(room, channel.channel_name, channel.username)
         except KeyError:
             logger.error('Attempt to remove user from unregistered room!')
 
