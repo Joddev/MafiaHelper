@@ -1,4 +1,5 @@
 from game.core.base import *
+from game.core.room_status import RoomStatus
 from game.core.room_processor import *
 from channels.layers import get_channel_layer
 from game.socket import HandlerType
@@ -23,8 +24,8 @@ class Room:
         'get_type',
     ]
 
-    def __init__(self, room_name, users=None):
-        self.status = RoomStatus(room_name, users)
+    def __init__(self, room_key, users=None):
+        self.status = RoomStatus(room_key, users)
         self.phases = [WaitingRoom(self.status)]
         self.cur_phase = self.phases[0]
 
@@ -43,7 +44,7 @@ class Room:
     def game_done(self):
         result = self.cur_phase.game_done()
         if result is not None:
-            self.status = RoomStatus(self.status.room_name, [user for user in self.status.users if user.can_act()]
+            self.status = RoomStatus(self.status.room_key, [user for user in self.status.users if user.can_act()]
                                      , self.status.jobs)
             self.cur_phase = WaitingRoom(self.status)
             self.phases.append(self.cur_phase)
@@ -56,104 +57,86 @@ class Room:
 class RoomHandler:
 
     def __init__(self):
-        logger.info('RoomContainer initiated.')
-        self.__rooms = {}
+        logger.debug('RoomContainer initiated.')
+        self.room_map = {}
 
-    def room_exists(self, room):
-        return room in self.__rooms
+    def room_exists(self, room_key):
+        return room_key in self.room_map
 
-    def get_user(self, room, key):
+    def get_user(self, room_key, user_key):
         try:
-            return self.__rooms[room].get_user(key)
+            return self.room_map[room_key].get_user(user_key)
         except KeyError:
             return None
 
-    async def add_user(self, room, channel):
-        # room already exists
+    async def add_user(self, room_key, channel):
         try:
-            logger.info('user {} is added to room {}'.format(channel.username, room))
-            self.__rooms[room].add_user(channel.channel_name, channel.username)
-            await self.alert_member_changed(room, channel.channel_name, channel.username)
+            # room exists
+            logger.debug('user {} is added to room {}'.format(channel.username, room_key))
+            self.room_map[room_key].add_user(channel.channel_name, channel.username)
+            await self.alert_member_changed(room_key, channel.channel_name, channel.username)
         except KeyError:
-            logger.info('new room {} is created'.format(room))
-            new_room = Room(room)
+            # create new room
+            logger.debug('new room {} is created'.format(room_key))
+            new_room = Room(room_key)
             new_room.add_user(channel.channel_name, channel.username)
-            self.__rooms[room] = new_room
+            self.room_map[room_key] = new_room
 
-    async def remove_user(self, room, channel):
+    async def remove_user(self, room_key, channel):
         try:
-            self.__rooms[room].cur_phase.remove_user(channel.channel_name)
-            if len([user for user in self.__rooms[room].get_user_list() if user.connected]) < 1:
-                del self.__rooms[room]
+            self.room_map[room_key].cur_phase.remove_user(channel.channel_name)
+            if len([user for user in self.room_map[room_key].get_user_list() if user.connected]) < 1:
+                # remove empty room
+                del self.room_map[room_key]
             else:
-                await self.alert_member_changed(room, channel.channel_name, channel.username)
+                await self.alert_member_changed(room_key, channel.channel_name, channel.username)
         except KeyError:
             logger.error('Attempt to remove user from unregistered room!')
 
-    async def alert_member_changed(self, room, key, name):
-        await get_channel_layer().group_send(
-            room,
-            {
-                'type': HandlerType.COMMON_SEND,
-                'ret_type': HandlerType.ROOM_MEMBER_CHANGED,
-                'id': key,
-                'name': name,
-                'users': [choice for choice in self.room_choice_list(room)]
-            }
-        )
-
-    def reconnect_user(self, room, user):
-        # room already exists
+    def reconnect_user(self, room_key, user):
         try:
-            logger.info('user {} is reconnected to room {}'.format(user.name, room))
-            self.__rooms[room].reconnect_user(user)
+            # room exists
+            logger.debug('user {} is reconnected to room {}'.format(user.name, room_key))
+            self.room_map[room_key].reconnect_user(user)
         except KeyError:
             logger.error('Attempt to reconnected user from unregistered room!')
 
-    def disconnect_user(self, room, user):
+    def disconnect_user(self, room_key, user):
         try:
-            self.__rooms[room].disconnect_user(user)
-            if len(self.__rooms[room].users) < 1:
-
-                del self.__rooms[room]
+            # room exists
+            self.room_map[room_key].disconnect_user(user)
+            if len(self.room_map[room_key].users) < 1:
+                del self.room_map[room_key]
         except KeyError:
             logger.error('Attempt to disconnect user from unregistered room!')
 
-    async def job_send(self, room, user_key, message):
-        user_list = self.room_user_list(room)
-        chooser = self.get_user(room, user_key)
-        if chooser.job.visible_team():
-            team_mates = [user for user in user_list if type(user.job) == type(chooser.job)]
-        else:
-            team_mates = [chooser]
-        for mate in team_mates:
-            await get_channel_layer().send(mate.key, message)
-
-    async def choose(self, room, key, target, status):
+    async def choose(self, room_key, user_key, target_key, status):
         try:
-            cur_room = self.__rooms[room]
-            if cur_room.choose(key, target, Choice.Status(status)):
+            # room exsits
+            cur_room = self.room_map[room_key]
+            if cur_room.choose(user_key, target_key, Choice.Status(status)):
                 event = {
                     'type': HandlerType.CHOOSE_CHANGED,
-                    'user': key,
+                    'user': user_key,
                     'choice': {
-                        'target': target,
+                        'target': target_key,
                         'status': status
                     }
                 }
-                # when night
                 if cur_room.get_type() == 3:
-                    await self.job_send(room, key, event)
+                    # when night
+                    await self.alert_on_jobs(room_key, user_key, event)
                 else:
-                    await get_channel_layer().group_send(room, event)
+                    await get_channel_layer().group_send(room_key, event)
             else:
+                # can not choose
                 await get_channel_layer().send(
-                    key,
+                    user_key,
                     {
                         'type': HandlerType.COMMON_SEND,
                         'ret_type': HandlerType.CANNOT_CHOOSE,
-                        'user': key,
-                        'target': target,
+                        'user': user_key,
+                        'target': target_key,
                     }
                 )
         except KeyError:
@@ -163,16 +146,17 @@ class RoomHandler:
             logger.error('Choice with invalid status')
             return None
 
-    async def check_done(self, room):
+    async def check_done(self, room_key):
         try:
-            cur_room = self.__rooms[room]
+            # room exists
+            cur_room = self.room_map[room_key]
             if cur_room.done():
                 prev_status = cur_room.get_type()
                 result = cur_room.result()
                 cur_room.next_phase()
-                for user in self.room_user_list(room):
+                for user in self.room_user_list(room_key):
                     if user.connected:
-                        processed = self.process_result(room, user, prev_status, result)
+                        processed = self.process_result(room_key, user, prev_status, result)
                         await get_channel_layer().send(
                             user.key,
                             {
@@ -183,11 +167,11 @@ class RoomHandler:
                                 'status': cur_room.get_type(),
                             }
                         )
-                await self.alert_member_changed(room, user.key, user.name)
+                await self.alert_member_changed(room_key, user.key, user.name)
                 done = cur_room.game_done()
                 if done is not None:
                     await get_channel_layer().group_send(
-                        room,
+                        room_key,
                         {
                             'type': HandlerType.COMMON_SEND,
                             'ret_type': HandlerType.GAME_DONE,
@@ -199,10 +183,10 @@ class RoomHandler:
             return None
 
     def process_result(self, room, user, status, result):
-        cur_room = self.__rooms[room]
+        cur_room = self.room_map[room]
         processed = {}
-        # job initiated
         if status == 0:
+            # after job initiated
             if user.job.visible_team():
                 team_mates = [row.dict() for row in result if type(row.job) == type(user.job)]
             else:
@@ -210,63 +194,91 @@ class RoomHandler:
             processed['team_mates'] = team_mates
             processed['job'] = user.job.name()
         if status == 2:
+            # after day vote result
             if result:
                 processed['victim'] = result.dict()
         if status == 3:
+            # after night action result
             act_list = []
-            logger.info(user.dict())
             for row in result:
                 if row.scope == 'all' or row.scope == user.job.name():
                     act_list.append(row.dict())
             processed['act_list'] = act_list
         if cur_room.get_type() == 3:
+            # before night
             processed['targets'] = [target_user.dict() for target_user in self.room_user_list(room)
                                     if cur_room.can_target(user, target_user)]
         return processed
 
     def add_job(self, room, job):
         try:
-            self.__rooms[room].add_job(job)
+            self.room_map[room].add_job(job)
         except KeyError:
             logger.error('Attempt to add job to unregistered room!')
 
     def remove_job(self, room, job):
         try:
-            self.__rooms[room].remove_job(job)
+            self.room_map[room].remove_job(job)
         except KeyError:
             logger.error('Attempt to remove job to unregistered room!')
 
     def room_list(self):
         rooms = []
-        for room_name in self.__rooms:
-            room = self.__rooms[room_name]
+        for room_key in self.room_map:
+            room = self.room_map[room_key]
             if room.type() == WaitingRoom:
                 rooms.append({
-                    'name': room_name,
+                    'name': room_key,
                     'num': len(room.get_user_list())
                 })
         return rooms
 
     def room_user_list(self, room):
         try:
-            return self.__rooms[room].get_user_list()
+            return self.room_map[room].get_user_list()
         except KeyError:
             logger.error('Attempt to access unregistered room!')
 
     def room_job_list(self, room):
         try:
-            return self.__rooms[room].get_job_list()
+            return self.room_map[room].get_job_list()
         except KeyError:
             logger.error('Attempt to access unregistered room!')
 
     def room_choice_list(self, room):
         try:
-            return [choice.user_dict() for choice in self.__rooms[room].get_choice_list()]
+            return [choice.user_dict() for choice in self.room_map[room].get_choice_list()]
         except KeyError:
             logger.error('Attempt to access unregistered room!')
 
     def game_done(self, room):
         try:
-            return self.__rooms[room].game_done()
+            return self.room_map[room].game_done()
         except KeyError:
             logger.error('Attempt to access unregistered room!')
+
+    ######################
+    ### Sender Methods ###
+    ######################
+
+    async def alert_member_changed(self, room_key, user_key, username):
+        await get_channel_layer().group_send(
+            room_key,
+            {
+                'type': HandlerType.COMMON_SEND,
+                'ret_type': HandlerType.ROOM_MEMBER_CHANGED,
+                'id': user_key,
+                'name': username,
+                'users': [choice for choice in self.room_choice_list(room_key)]
+            }
+        )
+
+    async def alert_on_jobs(self, room_key, user_key, message):
+        user_list = self.room_user_list(room_key)
+        chooser = self.get_user(room_key, user_key)
+        if chooser.job.visible_team():
+            team_mates = [user for user in user_list if type(user.job) == type(chooser.job)]
+        else:
+            team_mates = [chooser]
+        for mate in team_mates:
+            await get_channel_layer().send(mate.key, message)

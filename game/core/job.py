@@ -1,39 +1,9 @@
 from enum import Enum
+from game.core.base import User
 
-
-class User:
-    class Status(str, Enum):
-        DEAD = 'dead'
-        ALIVE = 'alive'
-        SAVED = 'saved'
-
-    def __init__(self, user_key, user_name):
-        self.key = user_key
-        self.name = user_name
-        self.status = User.Status.ALIVE
-        self.connected = True
-        self.job = None
-
-    def can_act(self):
-        return self.status != User.Status.DEAD and self.connected
-
-    def executed(self):
-        self.status = User.Status.DEAD
-
-    def clear_temporary_status(self):
-        if self.status == User.Status.SAVED:
-            self.status = User.Status.ALIVE
-        if self.Status != User.Status.DEAD and not self.connected:
-            self.status = User.Status.DEAD
-
-    def dict(self):
-        return {
-            'id': self.key,
-            'name': self.name,
-            'status': self.status.value,
-            'connected': self.connected,
-            # 'job': self.job.name() if self.job else None
-        }
+###################
+### Game Groups ###
+###################
 
 
 class Group:
@@ -60,9 +30,9 @@ class MafiaGroup(Group):
     def dict(cls):
         return 'mafia_group'
 
-
-citizen_group = CitizenGroup()
-mafia_group = MafiaGroup()
+#################
+### Game Jobs ###
+#################
 
 
 class Job:

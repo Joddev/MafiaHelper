@@ -1,5 +1,6 @@
 import logging
 from game.core.base import *
+from game.core.job import *
 from collections import Counter
 
 
