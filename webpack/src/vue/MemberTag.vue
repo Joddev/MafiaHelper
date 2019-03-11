@@ -13,12 +13,12 @@
 </template>
 <script>
     export default {
-        props: ['member', 'self', 'target', 'member_set'],
+        props: ['member', 'self', 'target', 'member_list'],
         name: "MemberTag",
         computed: {
             target_user : function() {
                 if(this.member.choice.target)
-                    return this.member_set[this.member.choice.target].name;
+                    return this.member_list.find(member => member.id === this.member.choice.target).name;
                 else
                     return 'NONE';
             },

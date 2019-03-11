@@ -1,7 +1,15 @@
 import { DataSet, Network } from 'vis'
-import app from './view'
+import sender from './sender'
 
-const makeGraph = function(container, players, options = {}) {
+const makeGraph = function(container, me, players, options = {}) {
+
+    const elect = function(target) {    
+        if(target === me.id || target === me.choice.target)
+            sender.choose(null, 'yet');
+        else
+            sender.choose(target, 'tmp');
+    }
+
     const width = options.width | 500;
     const height = options.height | 500;
 
@@ -88,7 +96,7 @@ const makeGraph = function(container, players, options = {}) {
     network.on('selectNode', function(properties) {
         const ids = properties.nodes;
         const node = nodes.get(ids)[0];
-        if(node) app.elect(node.id);
+        if(node) elect(node.id);
         network.unselectAll();
     });
     // network.on('stabilized', function() {
@@ -101,5 +109,5 @@ const makeGraph = function(container, players, options = {}) {
 };
 
 export default {
-    makeGraph: (container, players, options = {}) => makeGraph(container, players, options)
+    makeGraph: (container, me, players, options = {}) => makeGraph(container, me, players, options)
 }

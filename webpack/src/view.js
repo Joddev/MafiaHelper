@@ -3,11 +3,16 @@ import _ from 'lodash';
 import VueJsModal from 'vue-js-modal';
 import JobModal from './vue/JobModal.vue'
 import MemberTag from './vue/MemberTag.vue'
+import MainVue from './vue/Main.vue'
+import RoomVue from './vue/Room.vue'
 
 Vue.use(VueJsModal, {
   dialog: true,
   dynamic: true,
 });
+
+Vue.component('main-view', MainVue)
+Vue.component('room-view', RoomVue)
 
 Vue.component('mafia-room', {
     props: ['room'],
@@ -82,12 +87,6 @@ const app = new Vue({
     el: '#mafia-vue',
     data: status,
     methods: {
-        toggle_name_input: () => {
-            app.edit_name = !app.edit_name;
-            app.$nextTick(() => {
-                if(app.edit_name) app.$refs.editor.focus();
-            });
-        },
         change_name: () => {
             change_name_debounce();
         },
@@ -101,87 +100,6 @@ const app = new Vue({
                 type: TYPE.JOIN_ROOM,
                 room: room.name,
             })
-        },
-        leave_room: () => {
-            app.socket.send_json({
-                type: TYPE.LEAVE_ROOM,
-                room: app.room,
-            })
-        },
-        ready: function() {
-            if(this.me.choice.status === 'yet')
-                this.choose('ready', 'fixed');
-            else
-                this.choose(null, 'yet');
-        },
-        day_choose: function(target) {
-            if(this.me.choice.status === 'yet')
-                this.choose(target, 'fixed');
-            else
-                this.choose(null, 'yet');
-        },
-        elect: function(target) {
-            if(target === 'fix')
-                if (this.me.choice.target === null) alert('choose target user first');
-                else if(this.me.choice.status === 'fixed') this.choose(null, 'yet');
-                else this.choose(this.me.choice.target, 'fixed');
-            else if(target === 'abstain')
-                if(this.me.choice.status === 'fixed' && this.me.choice.target === null) this.choose(null, 'yet');
-                else this.choose(null, 'fixed');
-            else if(target === app.me.id || target === app.me.choice.target)
-                this.choose(null, 'yet');
-            else
-                this.choose(target, 'tmp');
-        },
-        choose_target: function(target) {
-            if(target === 'fix')
-                if (this.me.choice.target === null) alert('choose target user first');
-                else if(this.me.choice.status === 'fixed') this.choose(null, 'yet');
-                else this.choose(this.me.choice.target, 'fixed');
-            else if(target === 'abstain')
-                if(this.me.choice.status === 'fixed' && this.me.choice.target === null) this.choose(null, 'yet');
-                else this.choose(null, 'fixed');
-            else if(target === app.me.choice.target)
-                this.choose(null, 'yet');
-            else
-                this.choose(target, 'tmp');
-        },
-        choose: function(target, status) {
-            this.socket.send_json({
-                type: TYPE.CHOOSE,
-                target: target,
-                status: status,
-            });
-        },
-        toggle_status: function(status) {
-            if(this.status === 'dead')
-                return;
-            if(status === this.status)
-                this.status = '';
-            else
-                this.status = status;
-            this.socket.send_json({
-                type: TYPE.TOGGLE_STATUS,
-                status: status,
-            })
-        },
-        add_job: function(job) {
-            console.log(job);
-            this.socket.send_json({
-                type: TYPE.ADD_JOB,
-                job: job,
-            })
-        },
-        remove_job: function(job) {
-            this.socket.send_json({
-                type: TYPE.REMOVE_JOB,
-                job: job,
-            })
-        },
-        get_jobs: function() {
-            this.socket.send_json({
-                type: TYPE.GET_JOBS
-            });
         },
         modal: function(jobs) {
             this.$modal.show(JobModal,{
@@ -237,7 +155,7 @@ const app = new Vue({
         },
         clear_room_status: function() {
             this.clear_status();
-            this.job = null;
+            this.me.job = null;
             this.jobs = [];
             this.member_list = [];
             this.member_set = {};

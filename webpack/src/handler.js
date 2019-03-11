@@ -230,7 +230,7 @@ const room_status_changed = (json) => {
     app.room_status = json.status;
     switch (prev_status) {
         case 0:
-            app.job = json.result.job;
+            app.me.job = json.result.job;
             const team_mates = [];
             json.result.team_mates.forEach(function(row) {
                 team_mates.push(app.member_set[row.id]);
@@ -241,7 +241,7 @@ const room_status_changed = (json) => {
             if (app.room_status === 2)
                 app.$nextTick(function () {
                     const voters = app.member_list.filter(member => member.status !== 'dead');
-                    app.voteMap = VisGraph.makeGraph(document.getElementById('canvas-container'), voters);
+                    app.voteMap = VisGraph.makeGraph(document.getElementById('canvas-container'), app.me, voters);
                 });
             break;
         case 2:
@@ -261,7 +261,7 @@ const room_status_changed = (json) => {
                         set_user(row.result, true);
                         break;
                     case 'bool':
-                        if (app.job === 'police') {
+                        if (app.me.job === 'police') {
                             const suspect = app.member_set[row.result.target];
                             if(row.result.confirmation) alert(`${suspect.name} belongs to mafia`);
                             else alert(`${suspect.name} does not belong to mafia`);

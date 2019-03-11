@@ -15,7 +15,9 @@ ws.socket = (url, handler) => {
         handler.accept(JSON.parse(e.data));
     };
 
+    ws.current = socket;
     return socket;
 };
+
 
 export default ws;
