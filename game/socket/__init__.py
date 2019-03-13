@@ -28,3 +28,4 @@ class HandlerType(str, enum.Enum):
     ROOM_INITIATED = 'room_initiated'
     MAIN_CHANGED = 'main_changed'
     GAME_DONE = 'game_done'
+    CONFIRM_REJOIN = 'confirm_rejoin'

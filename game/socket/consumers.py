@@ -13,6 +13,7 @@ MAIN_GROUP = 'main'
 class GameConsumer(AsyncJsonWebsocketConsumer):
 
     room_key = None
+    user_key = None
     username = None
 
     #####################
@@ -25,10 +26,15 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         Give random name and accept client. Join to main group
         """
         logger.debug('connect')
-        self.username = names.get_first_name()        
+        self.username = self.scope["session"].get("username", names.get_first_name())
+        self.user_key = self.scope["session"].get("user_key", 'user_{}'.format(uuid.uuid4()))
         await self.accept()
-        # Enter main
+        # Enter main        
         await self.main_joined()
+        # Check rejoin
+        room_key = self.scope["session"].get("room_key", None)
+        if room_key is not None:
+            await self.confirm_rejoin(room_key)
 
     async def disconnect(self, close_code):
         """Disconnect
@@ -39,12 +45,19 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         # Leave room
         if self.room_key != MAIN_GROUP:
             logger.debug('leave room {}'.format(self.room_key))
+            self.scope["session"]["room_key"] = self.room_key
             await self.room_left(self.room_key)
+        else:
+            self.scope["session"]["room_key"] = None
         # Leave main also
         await self.main_left()
+        self.scope["session"]["username"] = self.username
+        self.scope["session"]["user_key"] = self.user_key
+        self.scope["session"].save()
 
     async def receive_json(self, content, **kwargs):
         logger.debug('receive_json')
+        logger.debug(content)
         method = content['type']
         try:
             func = getattr(self, method)
@@ -70,6 +83,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             event {dict} -- socket event
         """
         logger.debug('join_room')
+        logger.debug(event)
         room = event['room']
         await self.room_joined(room)
 
@@ -106,7 +120,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             event {dict} -- socket event
         """
         logger.debug('choose')
-        await room_container.choose(self.room_key, self.channel_name, event['target'], event['status'])
+        await room_container.choose(self.room_key, self.user_key, event['target'], event['status'])
 
     async def add_job(self, event):
         """Add job
@@ -151,6 +165,16 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         msg['type'] = event['ret_type']
         msg.pop('ret_type', None)
         await self.send_json(msg)
+    
+    # async def rejoin(self, event):
+    #     """Rejoin room
+        
+    #     Arguments:
+    #         event {dict} -- socket event
+    #     """
+    #     logger.debug('rejoin')
+    #     async self.room_joined(event['room'])
+
 
     ########################
     ### Private Handlers ###
@@ -162,6 +186,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         Arguments:
             event {dict} -- socket event
         """
+        logger.debug('choose_changed')
         await self.send_json(event)
         await room_container.check_done(self.room_key)
     
@@ -176,7 +201,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({
             'type': HandlerType.MAIN_INITIATED,
             'me': {
-                'id': self.channel_name,
+                'id': self.user_key,
                 'name': self.username,
             },
             'room': self.room_key,
@@ -206,6 +231,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         """Send changed main group information to client
         """
         logger.debug('main_changed')
+        logger.debug(self.room_key)
+        logger.debug(MAIN_GROUP)
         await self.channel_layer.group_send(
             MAIN_GROUP,
             {
@@ -222,11 +249,19 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             room {str} -- group name
         """
         logger.debug('room_initiated')
+        room_status = room_container.get_type(room)
         await self.send_json({
             'type': HandlerType.ROOM_INITIATED,
             'users': room_container.room_choice_list(room),
             'jobs': room_container.room_job_list(room),
             'room': room,
+            'room_status': room_status,
+            'team_mates': room_container.get_team_mates(room, self.user_key)
+                if room_status != 0 else [],
+            'job': room_container.get_user(room, self.user_key).job.name()
+                if room_status != 0 else None,
+            'targets': room_container.get_targets(room, self.user_key)
+                if room_status == 3 else []
         })
 
     async def room_joined(self, group):
@@ -243,7 +278,10 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             self.room_key,
             self.channel_name
         )
-        await room_container.add_user(self.room_key, self)
+        if room_container.get_user(self.room_key, self.user_key):
+            await room_container.reconnect_user(self.room_key, self)
+        else:
+            await room_container.add_user(self.room_key, self)
         await self.main_changed()
         await self.room_initiated(group)
 
@@ -278,3 +316,16 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             }
         )
         await room_container.check_done(self.room_key)
+
+    async def confirm_rejoin(self, room_key):
+        """Confirm rejoin
+        
+        Arguments:
+            room_key {str} -- group key
+        """
+        logger.debug("confirm_rejoin")
+        await self.send_json({
+            'type': HandlerType.CONFIRM_REJOIN,
+            'room': room_key
+        })
+

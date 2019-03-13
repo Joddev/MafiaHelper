@@ -16,7 +16,7 @@ class RoomStatus:
     def __init__(self, room_key, users=None, jobs=None):
         self.room_key = room_key
         if users is not None:
-            self.users = [User(user.key, user.name) for user in users]
+            self.users = [User(user.key, user.name, user.channel_name) for user in users]
         else:
             self.users = []
         self.choices = [Choice(user) for user in self.users]

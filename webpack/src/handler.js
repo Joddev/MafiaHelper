@@ -25,7 +25,8 @@ export const TYPE = {
     MAIN_CHANGED: 'main_changed',
     ROOM_INITIATED: 'room_initiated',
     ROOM_MEMBER_CHANGED: 'room_member_changed',
-    GAME_DONE: 'game_done'
+    GAME_DONE: 'game_done',
+    CONFIRM_REJOIN: 'confirm_rejoin'
 };
 
 handler.accept = (json) => {
@@ -95,6 +96,9 @@ handler.accept = (json) => {
         case TYPE.GAME_DONE:
             game_done(json);
             return;
+        case TYPE.CONFIRM_REJOIN:
+            confirm_rejoin(json);
+            return;
         default:
             console.log(json);
             return;
@@ -156,11 +160,25 @@ const set_users = (user_list) => {
 const room_initiated = (json) => {
     app.room = json.room;
     app.jobs = json['jobs'];
-    console.log(app.me);
     set_users(json.users);
-    console.log(app.me);
-    console.log(app.member_set);
     app.me = app.member_set[app.me.id];
+    app.me.job = json.job;
+    app.room_status = json.room_status
+    // set team_mates
+    const team_mates = [];
+    json.team_mates.forEach(function(row) {
+        team_mates.push(app.member_set[row.id]);
+    });
+    app.team_mates = team_mates;
+    // set targets
+    app.targets = json.targets
+    // draw vote map
+    if (app.room_status === 2) {
+        app.$nextTick(function () {
+            const voters = app.member_list.filter(member => member.status !== 'dead');
+            app.voteMap = VisGraph.makeGraph(document.getElementById('canvas-container'), app.me, voters);            
+        });
+    }
 };
 
 const room_member_changed = (json) => {
@@ -296,17 +314,12 @@ const job_target_done = (json) => {
     app.block_screen(`Waiting for others (target: ${target})`);
 };
 
-// VisGraph.makeGraph(document.getElementById('canvas-test'), [
-//     {id:1, name:'Abaf'},
-//     {id:2, name:'abasda'},
-//     {id:3, name:'김실장'},
-//     {id:4, name:'whgkwhi'},
-//     {id:5, name:'cy118'},
-//     {id:6, name:'ajioas'},
-//     {id:7, name:'asjib'},
-//     {id:8, name:'asjidof'},
-//     {id:9, name:'bipqewirj'},
-// ]);
+const confirm_rejoin = (json) => {
+    if(confirm('Progressing room exists. Do you want join again?')) {
+        console.log(json)
+        app.join_room(json.room)        
+    }
+}
 
 export { app };
 export default handler;

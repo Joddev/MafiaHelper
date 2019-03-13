@@ -103,6 +103,13 @@ const makeGraph = function(container, me, players, options = {}) {
     //     network.fit();
     // });
 
+    // draw edges
+    for (const i in players) {
+        const player = players[i];
+        if (player.choice.status !== 'yet')
+            draw_arrow(player.id, player.choice.target, player.choice.status);
+    }
+
     return {
         vote: draw_arrow,
     };

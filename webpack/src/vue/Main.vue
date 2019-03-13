@@ -4,7 +4,7 @@
 				{{ me.name }} <i class="fas" v-bind:class="{ 'fa-check': edit_name, 'fa-pencil-alt': !edit_name }"></i>
 		</span>
 		<input ref="editor" v-model="me.name" class="input-tag" v-show="edit_name" @keyup.enter="change_name">
-		<mafia-room v-for="room in room_list" v-bind:room="room" @click.native="join_room(room)" :key="room.name"></mafia-room>
+		<mafia-room v-for="room in room_list" v-bind:room="room" @click.native="join_room(room.name)" :key="room.name"></mafia-room>
 		<div @click="create_room" class="container-login100-form-btn m-t-30">
 				<div class="login100-form-btn">
 						+ create room

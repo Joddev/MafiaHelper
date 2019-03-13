@@ -10,9 +10,10 @@ class User:
         ALIVE = 'alive'
         SAVED = 'saved'
 
-    def __init__(self, user_key, user_name):
+    def __init__(self, user_key, user_name, channel_name):
         self.key = user_key
         self.name = user_name
+        self.channel_name = channel_name
         self.status = User.Status.ALIVE
         self.connected = True
         self.job = None
@@ -28,6 +29,10 @@ class User:
             self.status = User.Status.ALIVE
         if self.Status != User.Status.DEAD and not self.connected:
             self.status = User.Status.DEAD
+    
+    def init_status(self):
+        self.job = None
+        self.status = User.Status.ALIVE
 
     def dict(self):
         return {

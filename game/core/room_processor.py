@@ -16,7 +16,7 @@ class RoomProcessor:
         except StopIteration:
             return None
 
-    def add_user(self, user_key, user_name):
+    def add_user(self, user_key, user_name, channel_name):
         raise NotImplementedError
 
     def remove_user(self, user_key):
@@ -28,10 +28,11 @@ class RoomProcessor:
     def get_choice_list(self):
         return self.room_status.choices
 
-    def reconnect_user(self, user_key):
+    def reconnect_user(self, user_key, channel_name):
         user = self.get_user(user_key)
         if user:
             user.connected = True
+            user.channel_name = channel_name
             return True
         else:
             return False
@@ -83,10 +84,10 @@ class WaitingRoom(RoomProcessor):
         super().__init__(room_status)
         self.room_status.type = WaitingRoom
 
-    def add_user(self, user_key, user_name):
+    def add_user(self, user_key, user_name, channel_name):
         user = self.get_user(user_key)
         if not user:
-            user = User(user_key, user_name)
+            user = User(user_key, user_name, channel_name)
             self.room_status.add_user(user)
             return True
         else:
@@ -152,7 +153,7 @@ class DayRoom(RoomProcessor):
         super().__init__(room_status)
         self.room_status.type = DayRoom
 
-    def add_user(self, user_key, user_name):
+    def add_user(self, user_key, user_name, channel_name):
         self.get_user(user_key).connected = True
 
     def remove_user(self, user_key):
@@ -189,7 +190,7 @@ class ElectionRoom(RoomProcessor):
         super().__init__(room_status)
         self.room_status.type = ElectionRoom
 
-    def add_user(self, user_key, user_name):
+    def add_user(self, user_key, user_name, channel_name):
         self.get_user(user_key).connected = True
 
     def remove_user(self, user_key):
@@ -246,7 +247,7 @@ class NightRoom(RoomProcessor):
         super().__init__(room_status)
         self.room_status.type = NightRoom
 
-    def add_user(self, user_key, user_name):
+    def add_user(self, user_key, user_name, channel_name):
         self.get_user(user_key).connected = True
 
     def remove_user(self, user_key):

@@ -29,7 +29,7 @@ const sender = {
 	join_room: (room) => {
 			ws.current.send_json({
 					type: TYPE.JOIN_ROOM,
-					room: room.name,
+					room: room,
 			})
 	},
 	choose: function(target, status) {

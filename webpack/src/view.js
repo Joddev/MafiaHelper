@@ -5,6 +5,7 @@ import JobModal from './vue/JobModal.vue'
 import MemberTag from './vue/MemberTag.vue'
 import MainVue from './vue/Main.vue'
 import RoomVue from './vue/Room.vue'
+import sender from './sender'
 
 Vue.use(VueJsModal, {
   dialog: true,
@@ -13,29 +14,7 @@ Vue.use(VueJsModal, {
 
 Vue.component('main-view', MainVue)
 Vue.component('room-view', RoomVue)
-
-Vue.component('mafia-room', {
-    props: ['room'],
-    template:`
-        <div class="container-login100-form-btn m-t-30">
-            <div class="login100-form-btn">
-                {{ room.name }}<span class="cnt">{{ room.num }}</span>
-            </div>
-        </div>
-    `
-});
-
 Vue.component('mafia-user-tag', MemberTag);
-
-Vue.component('mafia-self-tag', {
-    props: ['member'],
-    template: '<span class="tag name">{{ member.name }} <i v-bind:class="fas fa-pencil-alt"></i></span>'
-});
-
-Vue.component('job-tag', {
-    props: ['job'],
-    template: '<span class="tag job">{{ job }}</span>'
-});
 
 const status = {
     room_list: [],
@@ -96,16 +75,13 @@ const app = new Vue({
             })
         },
         join_room: (room) => {
-            app.socket.send_json({
-                type: TYPE.JOIN_ROOM,
-                room: room.name,
-            })
+            sender.join_room(room)
         },
         modal: function(jobs) {
             this.$modal.show(JobModal,{
                 jobs: jobs,
                 handler: (job) => {
-                    this.add_job(job);
+                    sender.add_job(job);
                     this.$modal.hide('job-vue');
                 },
                 read_only: this.room_status !== 0,
@@ -147,8 +123,8 @@ const app = new Vue({
                 };
                 if(!member.connected)
                     delete this.member_set[id];
-                app.member_list = Object.values(app.member_set);
             }
+            app.member_list = Object.values(app.member_set);
             this.room_status = 0;
             this.targets = [];
             this.clear_block();
