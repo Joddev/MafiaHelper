@@ -2,11 +2,7 @@
 	<div>
 			<div class="tag-container m-t-30">
 					<span class="tag-label">jobs</span>
-					<span v-for="elem in jobs" class="tag job" :key=elem.job>
-							{{ elem.job }}: {{ elem.count }}
-							<i @click="add_job(elem.job)" class="fas fa-caret-up"></i>
-							<i @click="remove_job(elem.job)" class="fas fa-caret-down"></i>
-					</span>
+					<job-tag v-for="elem in jobs" :key=elem.job v-bind=elem></job-tag>
 					<i @click="get_jobs" class="fas fa-plus-circle" style="color:#2f5773"></i>
 			</div>
 			<div @click="ready()" class="container-login100-form-btn m-t-30">
@@ -19,7 +15,8 @@
 </template>
 
 <script>
-import sender from '../sender'
+		import sender from '../sender'
+    import JobTag from './JobTag'
 
     export default {
 				props: ['me', 'jobs'],
@@ -27,6 +24,9 @@ import sender from '../sender'
 					return {
 					}
 				},
+        components: {
+            'job-tag': JobTag
+        },
 				methods: {
 					get_jobs: sender.get_jobs,
 					ready: function() {

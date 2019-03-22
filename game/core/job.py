@@ -36,6 +36,12 @@ class MafiaGroup(Group):
 
 
 class Job:
+    """Base abstract class for all jobs
+    
+    Attributes:
+        order {int} -- order of job execution (job action with less order will be excuted early)
+    """
+
     def __init__(self):
         self.order = 100
 
@@ -52,6 +58,8 @@ class Job:
         return self.__class__.__name__.lower()
 
     def visible_team(self):
+        """Can this job members recongnize each other
+        """
         return True
 
 
@@ -92,6 +100,7 @@ class Doctor(Citizen):
 
     def __init__(self):
         super().__init__()
+        # it must be ahead of killers
         self.order = 30
 
     def can_act(self, room_status):
@@ -133,12 +142,14 @@ class Mafia(Job):
 class ActResult:
     def __init__(self, result_type, scope, result):
         """
-        :param str result_type:
-            user - return result type User
-            bool - return target with boolean result
-        :param str scope:
-            all - notify result to all users
-            job - notify result to users with specific job
+
+        Arguemtns:
+            result_type {str}
+                'user' -- return result type User
+                'bool' -- return target with boolean result
+            scope {str}
+                'all' -- notify result to all users
+                'job' -- notify result to users with specific job
         """
         self.result_type = result_type
         self.scope = scope

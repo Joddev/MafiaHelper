@@ -12,10 +12,6 @@ Vue.use(VueJsModal, {
   dynamic: true,
 });
 
-Vue.component('main-view', MainVue)
-Vue.component('room-view', RoomVue)
-Vue.component('mafia-user-tag', MemberTag);
-
 const status = {
     room_list: [],
     room_status: 0,
@@ -65,6 +61,11 @@ const change_name_debounce = _.debounce(
 const app = new Vue({
     el: '#mafia-vue',
     data: status,
+    components: {
+        'main-view': MainVue,
+        'room-view': RoomVue,
+        'mafia-user-tag': MemberTag
+    },
     methods: {
         change_name: () => {
             change_name_debounce();

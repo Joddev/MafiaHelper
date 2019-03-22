@@ -2,9 +2,7 @@
 	<div>
 			<div class="tag-container m-t-30">
 					<span class="tag-label">job</span>
-					<span class="tag job">
-							{{ me.job }}
-					</span>
+					<job-tag :job=me.job></job-tag>
 					<i @click="get_jobs" class="far fa-question-circle" style="color:#2f5773"></i>
 			</div>
 			<div class="tag-container m-t-30">
@@ -23,7 +21,9 @@
 </template>
 
 <script>
-import sender from '../sender'
+		import sender from '../sender'
+    import JobTag from './JobTag'
+		import MemberTag from './MemberTag.vue'
 
     export default {
 				props: ['me', 'team_mates'],
@@ -31,6 +31,10 @@ import sender from '../sender'
 					return {
 					}
 				},
+        components: {
+            'job-tag': JobTag,
+						'mafia-user-tag': MemberTag
+        },
 				methods: {
 					day_choose: function(target) {
 							if(this.me.choice.status === 'yet')

@@ -33,7 +33,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         await self.main_joined()
         # Check rejoin
         room_key = self.scope["session"].get("room_key", None)
-        if room_key is not None:
+        if room_key is not None and room_container.room_exists(room_key):
             await self.confirm_rejoin(room_key)
 
     async def disconnect(self, close_code):
@@ -165,16 +165,6 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         msg['type'] = event['ret_type']
         msg.pop('ret_type', None)
         await self.send_json(msg)
-    
-    # async def rejoin(self, event):
-    #     """Rejoin room
-        
-    #     Arguments:
-    #         event {dict} -- socket event
-    #     """
-    #     logger.debug('rejoin')
-    #     async self.room_joined(event['room'])
-
 
     ########################
     ### Private Handlers ###
@@ -189,10 +179,6 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         logger.debug('choose_changed')
         await self.send_json(event)
         await room_container.check_done(self.room_key)
-    
-    #######################
-    ### Private Methods ###
-    #######################
 
     async def main_initiated(self):
         """Send main groups information to client

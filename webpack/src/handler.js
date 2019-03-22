@@ -4,106 +4,40 @@ import _ from 'lodash'
 
 const handler = {};
 
-export const TYPE = {
-    MAIN_INITIATED: 'main_initiated',
-    MAIN_JOINED: 'main_joined',
-    MAIN_LEFT: 'main_left',
-    ROOM_JOINED: 'room_joined',
-    ROOM_LEFT: 'room_left',
-    MEMBER_STATUS_CHANGED: 'member_status_changed',
-    ROOM_STARTED: 'room_started',
-    ROOM_NOT_STARTED: 'room_not_started',
-    ROOM_JOB_INITIATED: 'room_job_initiated',
-    ROOM_STATUS_CHANGED: 'room_status_changed',
-    JOB_CHANGED: 'job_changed',
-    JOB_LIST: 'job_list',
-    VOTE_CHANGED: 'vote_changed',
-    TARGET_CHANGED: 'target_changed',
-    JOB_TARGET_DONE: 'job_target_done',
-    CHOOSE_CHANGED: 'choose_changed',
-    CANNOT_CHOOSE: 'cannot_choose',
-    MAIN_CHANGED: 'main_changed',
-    ROOM_INITIATED: 'room_initiated',
-    ROOM_MEMBER_CHANGED: 'room_member_changed',
-    GAME_DONE: 'game_done',
-    CONFIRM_REJOIN: 'confirm_rejoin'
-};
+export const handled_type = [
+    'main_initiated',
+    'main_joined',
+    'main_left',
+    'room_joined',
+    'room_left',
+    'member_status_changed',
+    'room_started',
+    'room_not_started',
+    'room_job_initiated',
+    'room_status_changed',
+    'job_changed',
+    'job_list',
+    'vote_changed',
+    'target_changed',
+    'job_target_done',
+    'choose_changed',
+    'cannot_choose',
+    'main_changed',
+    'room_initiated',
+    'room_member_changed',
+    'game_done',
+    'confirm_rejoin',
+]
 
 handler.accept = (json) => {
     console.log(json);
-    const type = json['type'];
-    switch(type) {
-        case TYPE.MAIN_INITIATED:
-            main_initiated(json);
-            return;
-        case TYPE.MAIN_CHANGED:
-            main_changed(json);
-            return;
-        case TYPE.MAIN_JOINED:
-            main_joined(json);
-            return;
-        case TYPE.ROOM_INITIATED:
-            room_initiated(json);
-            return;
-        case TYPE.ROOM_JOINED:
-            room_joined(json);
-            return;
-        case TYPE.MAIN_LEFT:
-            main_left(json);
-            return;
-        case TYPE.ROOM_LEFT:
-            room_left(json);
-            return;
-        case TYPE.ROOM_MEMBER_CHANGED:
-            room_member_changed(json);
-            return;
-        case TYPE.MEMBER_STATUS_CHANGED:
-            member_status_changed(json);
-            return;
-        case TYPE.JOB_CHANGED:
-            job_changed(json);
-            return;
-        case TYPE.JOB_LIST:
-            job_list(json);
-            return;
-        case TYPE.ROOM_NOT_STARTED:
-            room_not_started(json);
-            return;
-        case TYPE.ROOM_STARTED:
-            room_started(json);
-            return;
-        case TYPE.ROOM_JOB_INITIATED:
-            room_job_initiated(json);
-            return;
-        case TYPE.ROOM_STATUS_CHANGED:
-            room_status_changed(json);
-            return;
-        case TYPE.VOTE_CHANGED:
-            vote_changed(json);
-            return;
-        case TYPE.TARGET_CHANGED:
-            target_changed(json);
-            return;
-        case TYPE.JOB_TARGET_DONE:
-            job_target_done(json);
-            return;
-        case TYPE.CHOOSE_CHANGED:
-            choose_changed(json);
-            return;
-        case TYPE.CANNOT_CHOOSE:
-            cannot_choose(json);
-            return;
-        case TYPE.GAME_DONE:
-            game_done(json);
-            return;
-        case TYPE.CONFIRM_REJOIN:
-            confirm_rejoin(json);
-            return;
-        default:
-            console.log(json);
-            return;
-    }
+    if (handled_type.includes(json.type)) eval(json.type)(json);
+    else console.error(json);
 };
+
+///////////////////////
+/// handler methods ///
+///////////////////////
 
 const main_initiated = (json) => {
     app.clear_room_status();
@@ -116,7 +50,7 @@ const main_changed = (json) => {
 };
 
 const main_joined = (json) => {
-    const room = json['room'];
+    const room = json.room;
     let found = false;
     // when exists
     app.room_list.forEach((it) => {
@@ -134,33 +68,10 @@ const main_joined = (json) => {
     }
 };
 
-const set_user = (user, refresh) => {
-    if(typeof(app.member_set[user.id]) === 'undefined')
-        app.member_set[user.id] = user;
-    else
-        Object.assign(app.member_set[user.id], user);
-
-    if(refresh)
-        app.member_list = Object.values(app.member_set);
-};
-
-const set_users = (user_list) => {
-    const remains = [];
-    for (let i = 0; i < user_list.length; i++) {
-        const cur = user_list[i];
-        remains.push(cur.id);
-        set_user(cur);
-    }
-    for (const id in app.member_set)
-        if(!remains.includes(id))
-            delete app.member_set[id];
-    app.member_list = Object.values(app.member_set);
-};
-
 const room_initiated = (json) => {
     app.room = json.room;
-    app.jobs = json['jobs'];
-    set_users(json.users);
+    app.jobs = json.jobs;
+    $_set_users(json.users);
     app.me = app.member_set[app.me.id];
     app.me.job = json.job;
     app.room_status = json.room_status
@@ -182,13 +93,13 @@ const room_initiated = (json) => {
 };
 
 const room_member_changed = (json) => {
-    set_users(json.users);
+    $_set_users(json.users);
 };
 
 const room_joined = (json) => {
     app.room = json.room;
-    app.jobs = json['jobs'];
-    set_users(json.users);
+    app.jobs = json.jobs;
+    $_set_users(json.users);
     app.me = app.member_set[app.me.id];
 };
 
@@ -202,7 +113,7 @@ const main_left = (json) => {
 };
 
 const room_left = (json) => {
-    set_users(json.users);
+    $_set_users(json.users);
 };
 
 const choose_changed = (json) => {
@@ -220,12 +131,12 @@ const cannot_choose = (json) => {
 };
 
 const job_changed = (json) => {
-    app.jobs = json['jobs'];
+    app.jobs = json.jobs;
     app.ready_msg = '';
 };
 
 const job_list = (json) => {
-    app.modal(json['data'])
+    app.modal(json.data)
 };
 
 let clearReadyMsg =  _.debounce(() => {
@@ -264,7 +175,7 @@ const room_status_changed = (json) => {
             break;
         case 2:
             if (json.result && json.result.victim) {
-                set_user(json.result.victim, true);
+                $_set_user(json.result.victim, true);
                 if (json.result.victim.status === 'dead')
                     alert(`${json.result.victim.name} was executed.`);
                 else
@@ -272,20 +183,8 @@ const room_status_changed = (json) => {
             }
             break;
         case 3:
-            for (let i = 0; i < json.result.act_list.length; i++) {
-                const row = json.result.act_list[i];
-                switch (row.result_type) {
-                    case 'user':
-                        set_user(row.result, true);
-                        break;
-                    case 'bool':
-                        if (app.me.job === 'police') {
-                            const suspect = app.member_set[row.result.target];
-                            if(row.result.confirmation) alert(`${suspect.name} belongs to mafia`);
-                            else alert(`${suspect.name} does not belong to mafia`);
-                        }
-                }
-            }
+            for (const row of json.result.act_list) $_action_result(row)
+            break;
     }
     if(json.status === 3) {
         app.targets = json.result.targets;
@@ -308,8 +207,8 @@ const game_done = (json) => {
 };
 
 const job_target_done = (json) => {
-    const target = json['target'] ? app.members.find(function (member) {
-        return member.id === json['target'];
+    const target = json.traget ? app.members.find(function (member) {
+        return member.id === json.target;
     }).name : null;
     app.block_screen(`Waiting for others (target: ${target})`);
 };
@@ -318,6 +217,47 @@ const confirm_rejoin = (json) => {
     if(confirm('Progressing room exists. Do you want join again?')) {
         console.log(json)
         app.join_room(json.room)        
+    }
+}
+
+///////////////////////
+/// private methods ///
+///////////////////////
+
+const $_set_user = (user, refresh) => {
+    if(typeof(app.member_set[user.id]) === 'undefined')
+        app.member_set[user.id] = user;
+    else
+        Object.assign(app.member_set[user.id], user);
+
+    if(refresh)
+        app.member_list = Object.values(app.member_set);
+};
+
+const $_set_users = (user_list) => {
+    const remains = [];
+    for (let i = 0; i < user_list.length; i++) {
+        const cur = user_list[i];
+        remains.push(cur.id);
+        $_set_user(cur);
+    }
+    for (const id in app.member_set)
+        if(!remains.includes(id))
+            delete app.member_set[id];
+    app.member_list = Object.values(app.member_set);
+};
+
+const $_action_result = (row) => {
+    switch (row.result_type) {
+        case 'user':
+            $_set_user(row.result, true);
+            break;
+        case 'bool':
+            if (app.me.job === 'police') {
+                const suspect = app.member_set[row.result.target];
+                if(row.result.confirmation) alert(`${suspect.name} belongs to mafia`);
+                else alert(`${suspect.name} does not belong to mafia`);
+            }
     }
 }
 

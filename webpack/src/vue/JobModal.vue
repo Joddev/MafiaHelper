@@ -1,20 +1,26 @@
 <template>
     <div class="modal-job">
-        <table style="width:100%; text-align:center;" cellspacing="0">
-            <tr v-for="job in jobs">
-                <td>{{ job }}</td>
-                <td style="text-align: left;">
-                    mission: {{ job.mission }} <p/>
-                    action: {{ job.action }}
-                </td>
-                <td v-if="!read_only"><i @click="handler(job)" class="fas fa-plus-circle" style="color:#2f5773"></i></td>
-            </tr>
-        </table>
+        <div class="job-area">
+            <job-tag v-for="job in jobs" :key=job :job=job :handler="handler" :detail="true"></job-tag>
+        </div>
     </div>
 </template>
 
 <script>
+    import JobTag from './JobTag'
     export default {
         props: ['jobs', 'handler', 'read_only'],
+        components: {
+            'job-tag': JobTag
+        },
+        mounted: function() {
+            this.$el.parentElement.style.overflow = 'unset';
+        }
     }
 </script>
+
+<style scoped>
+    .job-area {
+        padding: 20px 15px;        
+    }
+</style>
