@@ -19,7 +19,7 @@ constantly==15.1.0
 cryptography==2.3.1
 daphne==2.2.3
 dj-database-url==0.5.0
-Django==2.1.5
+Django==2.2.13
 django-heroku==0.3.1
 elementpath==1.1.5
 et-xmlfile==1.0.1
