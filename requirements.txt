@@ -43,7 +43,7 @@ openpyxl==2.5.3
 paramiko==2.4.2
 pluggy==0.8.1
 psycopg2==2.7.7
-py==1.7.0
+py==1.10.0
 pyasn1==0.4.4
 pycparser==2.19
 PyHamcrest==1.9.0
