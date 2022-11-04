@@ -59,7 +59,7 @@ requests==2.18.4
 selenium==3.13.0
 six==1.11.0
 soupsieve==1.8
-Twisted==18.9.0
+Twisted==22.10.0
 txaio==18.8.1
 urllib3==1.22
 virtualenv==15.1.0
